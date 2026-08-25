@@ -1,0 +1,45 @@
+#-------------------------
+# Environment / Secrets
+#-------------------------
+# Docker, DB 등 실제 비밀값이 들어있는 파일. 절대 커밋하지 않는다.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+#-------------------------
+# Docker
+#-------------------------
+# 로컬 전용 오버라이드 (개인 포트/볼륨 설정 등)
+docker-compose.override.yml
+
+#-------------------------
+# OS Junk Files
+#-------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Trash-*
+
+#-------------------------
+# IDE / Editor
+#-------------------------
+.idea/
+.vscode/
+*.iml
+
+#-------------------------
+# Logs
+#-------------------------
+*.log
+
+#-------------------------
+# Claude Code
+#-------------------------
+CLAUDE.md
+study.txt
