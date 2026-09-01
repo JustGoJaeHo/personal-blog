@@ -42,23 +42,17 @@ class MenuController extends BaseController
     public function store(): RedirectResponse
     {
         if (! $this->validate($this->validationRules())) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+            return $this->validationErrorRedirect($this->validator->getErrors());
         }
 
         $parentId = $this->request->getPost('parent_id') ?: null;
 
         $depth = $this->resolveDepth($parentId);
         if ($depth === null) {
-            return redirect()->back()->withInput()->with('errors', ['parent_id' => '유효하지 않은 상위 메뉴입니다.']);
+            return $this->validationErrorRedirect(['parent_id' => '유효하지 않은 상위 메뉴입니다.']);
         }
 
-        $this->menuModel->insert([
-            'parent_id'  => $parentId,
-            'depth'      => $depth,
-            'name'       => $this->request->getPost('name'),
-            'sort_order' => (int) $this->request->getPost('sort_order'),
-            'is_visible' => $this->request->getPost('is_visible') ? 1 : 0,
-        ]);
+        $this->menuModel->insert($this->buildMenuPayload($parentId, $depth));
 
         return redirect()->to('/admin/menus')->with('message', '메뉴가 등록되었습니다.');
     }
@@ -85,27 +79,21 @@ class MenuController extends BaseController
         }
 
         if (! $this->validate($this->validationRules())) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+            return $this->validationErrorRedirect($this->validator->getErrors());
         }
 
         $parentId = $this->request->getPost('parent_id') ?: null;
 
         if ($parentId !== null && in_array((int) $parentId, $this->getRestrictedParentIds($id), true)) {
-            return redirect()->back()->withInput()->with('errors', ['parent_id' => '자기 자신 또는 하위 메뉴는 상위 메뉴로 선택할 수 없습니다.']);
+            return $this->validationErrorRedirect(['parent_id' => '자기 자신 또는 하위 메뉴는 상위 메뉴로 선택할 수 없습니다.']);
         }
 
         $depth = $this->resolveDepth($parentId);
         if ($depth === null) {
-            return redirect()->back()->withInput()->with('errors', ['parent_id' => '유효하지 않은 상위 메뉴입니다.']);
+            return $this->validationErrorRedirect(['parent_id' => '유효하지 않은 상위 메뉴입니다.']);
         }
 
-        $this->menuModel->update($id, [
-            'parent_id'  => $parentId,
-            'depth'      => $depth,
-            'name'       => $this->request->getPost('name'),
-            'sort_order' => (int) $this->request->getPost('sort_order'),
-            'is_visible' => $this->request->getPost('is_visible') ? 1 : 0,
-        ]);
+        $this->menuModel->update($id, $this->buildMenuPayload($parentId, $depth));
 
         return redirect()->to('/admin/menus')->with('message', '메뉴가 수정되었습니다.');
     }
@@ -122,6 +110,28 @@ class MenuController extends BaseController
     }
 
     /**
+     * 검증 실패 시 공통으로 사용하는 리다이렉트.
+     */
+    private function validationErrorRedirect(array $errors): RedirectResponse
+    {
+        return redirect()->back()->withInput()->with('errors', $errors);
+    }
+
+    /**
+     * 등록/수정에 공통으로 사용하는 메뉴 데이터.
+     */
+    private function buildMenuPayload(?string $parentId, int $depth): array
+    {
+        return [
+            'parent_id'  => $parentId,
+            'depth'      => $depth,
+            'name'       => $this->request->getPost('name'),
+            'sort_order' => (int) $this->request->getPost('sort_order'),
+            'is_visible' => $this->request->getPost('is_visible') ? 1 : 0,
+        ];
+    }
+
+    /**
      * @param list<array<string, mixed>> $menus
      *
      * @return list<array<string, mixed>>
@@ -131,13 +141,16 @@ class MenuController extends BaseController
         $branch = [];
 
         foreach ($menus as $menu) {
-            if ($menu['parent_id'] == $parentId) {
-                $children = $this->buildTree($menus, (int) $menu['id']);
-                if ($children !== []) {
-                    $menu['children'] = $children;
-                }
-                $branch[] = $menu;
+            $menuParentId = $menu['parent_id'] !== null ? (int) $menu['parent_id'] : null;
+            if ($menuParentId !== $parentId) {
+                continue;
             }
+
+            $children = $this->buildTree($menus, (int) $menu['id']);
+            if ($children !== []) {
+                $menu['children'] = $children;
+            }
+            $branch[] = $menu;
         }
 
         return $branch;
@@ -175,19 +188,33 @@ class MenuController extends BaseController
      */
     private function getRestrictedParentIds(int $id): array
     {
-        $menus       = $this->menuModel->findAll();
-        $descendants = $this->buildTree($menus, $id);
+        $descendantIds = $this->collectDescendantIds($this->menuModel->findAll(), $id);
 
-        $ids = [$id];
-        $collect = static function (array $nodes) use (&$ids, &$collect): void {
-            foreach ($nodes as $node) {
-                $ids[] = (int) $node['id'];
-                if (isset($node['children'])) {
-                    $collect($node['children']);
-                }
+        return [$id, ...$descendantIds];
+    }
+
+    /**
+     * 평면 목록에서 특정 메뉴의 모든 하위 메뉴 id를 재귀적으로 수집한다.
+     *
+     * @param list<array<string, mixed>> $menus
+     *
+     * @return list<int>
+     */
+    private function collectDescendantIds(array $menus, int $parentId): array
+    {
+        $ids = [];
+
+        foreach ($menus as $menu) {
+            $menuParentId = $menu['parent_id'] !== null ? (int) $menu['parent_id'] : null;
+            if ($menuParentId !== $parentId) {
+                continue;
             }
-        };
-        $collect($descendants);
+
+            $childId = (int) $menu['id'];
+            $ids[]   = $childId;
+
+            array_push($ids, ...$this->collectDescendantIds($menus, $childId));
+        }
 
         return $ids;
     }
