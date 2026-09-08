@@ -6,19 +6,28 @@
  */
 ?>
 <?php foreach ($nodes as $node): ?>
-    <tr>
+    <tr
+        draggable="true"
+        data-menu-id="<?= (int) $node['id'] ?>"
+        data-parent-id="<?= $node['parent_id'] !== null ? (int) $node['parent_id'] : '' ?>"
+        data-depth="<?= (int) $node['depth'] ?>"
+    >
+        <td class="admin-menu-tree__handle" title="드래그하여 순서 변경">⠿</td>
         <td>
             <span class="admin-menu-tree__indent" style="padding-left: <?= (((int) $node['depth']) - 1) * 20 ?>px">
                 <?= esc($node['name']) ?>
             </span>
         </td>
-        <td><?= (int) $node['sort_order'] ?></td>
+        <td class="admin-menu-tree__sort-order"><?= (int) $node['sort_order'] ?></td>
         <td>
-            <?php if ((int) $node['is_visible'] === 1): ?>
-                <span class="admin-badge admin-badge--success">노출</span>
-            <?php else: ?>
-                <span class="admin-badge admin-badge--muted">숨김</span>
-            <?php endif; ?>
+            <form method="post" action="<?= site_url('admin/menus/' . $node['id'] . '/toggle-visible') ?>" class="admin-inline-form">
+                <?= csrf_field() ?>
+                <?php if ((int) $node['is_visible'] === 1): ?>
+                    <button type="submit" class="admin-badge admin-badge--success admin-badge--button">노출</button>
+                <?php else: ?>
+                    <button type="submit" class="admin-badge admin-badge--muted admin-badge--button">숨김</button>
+                <?php endif; ?>
+            </form>
         </td>
         <td class="admin-table__actions">
             <a href="<?= site_url('admin/menus/' . $node['id'] . '/edit') ?>" class="admin-btn admin-btn--small">수정</a>
