@@ -22,6 +22,7 @@ $this->setVar('pageTitle', $pageTitle);
         </div>
     </div>
     <script src="<?= base_url('assets/admin/js/flash.js') ?>?v=<?= filemtime(FCPATH . 'assets/admin/js/flash.js') ?>"></script>
+    <script src="<?= base_url('assets/admin/js/admin-reorder.js') ?>?v=<?= filemtime(FCPATH . 'assets/admin/js/admin-reorder.js') ?>"></script>
     <?= $this->renderSection('scripts') ?>
 </body>
 </html>

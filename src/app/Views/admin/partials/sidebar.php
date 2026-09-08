@@ -2,6 +2,7 @@
 $menuItems = [
     ['label' => '대시보드', 'path' => 'admin'],
     ['label' => '메뉴 관리', 'path' => 'admin/menus'],
+    ['label' => '카테고리 관리', 'path' => 'admin/categories'],
 ];
 $currentPath = trim(current_url(true)->getPath(), '/');
 ?>

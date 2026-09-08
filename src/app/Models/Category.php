@@ -6,17 +6,17 @@ use App\Models\Concerns\Sortable;
 use App\Models\Concerns\SortableModel;
 use CodeIgniter\Model;
 
-class Menu extends Model implements Sortable
+class Category extends Model implements Sortable
 {
     use SortableModel;
 
-    protected $table            = 'menus';
+    protected $table            = 'categories';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['parent_id', 'depth', 'name', 'sort_order', 'is_visible'];
+    protected $allowedFields    = ['name', 'sort_order', 'is_visible'];
 
     protected bool $allowEmptyInserts = false;
     protected bool $updateOnlyChanged = true;

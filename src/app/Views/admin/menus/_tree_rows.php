@@ -8,26 +8,22 @@
 <?php foreach ($nodes as $node): ?>
     <tr
         draggable="true"
-        data-menu-id="<?= (int) $node['id'] ?>"
+        data-row-id="<?= (int) $node['id'] ?>"
         data-parent-id="<?= $node['parent_id'] !== null ? (int) $node['parent_id'] : '' ?>"
         data-depth="<?= (int) $node['depth'] ?>"
     >
-        <td class="admin-menu-tree__handle" title="드래그하여 순서 변경">⠿</td>
+        <td class="admin-drag-handle" title="드래그하여 순서 변경">⠿</td>
         <td>
             <span class="admin-menu-tree__indent" style="padding-left: <?= (((int) $node['depth']) - 1) * 20 ?>px">
                 <?= esc($node['name']) ?>
             </span>
         </td>
-        <td class="admin-menu-tree__sort-order"><?= (int) $node['sort_order'] ?></td>
+        <td data-sort-order><?= (int) $node['sort_order'] ?></td>
         <td>
-            <form method="post" action="<?= site_url('admin/menus/' . $node['id'] . '/toggle-visible') ?>" class="admin-inline-form">
-                <?= csrf_field() ?>
-                <?php if ((int) $node['is_visible'] === 1): ?>
-                    <button type="submit" class="admin-badge admin-badge--success admin-badge--button">노출</button>
-                <?php else: ?>
-                    <button type="submit" class="admin-badge admin-badge--muted admin-badge--button">숨김</button>
-                <?php endif; ?>
-            </form>
+            <?= view('admin/partials/_visibility_toggle', [
+                'toggleUrl' => site_url('admin/menus/' . $node['id'] . '/toggle-visible'),
+                'isVisible' => (int) $node['is_visible'] === 1,
+            ]) ?>
         </td>
         <td class="admin-table__actions">
             <a href="<?= site_url('admin/menus/' . $node['id'] . '/edit') ?>" class="admin-btn admin-btn--small">수정</a>

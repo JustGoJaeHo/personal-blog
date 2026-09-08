@@ -2,7 +2,6 @@
 
 namespace App\Controllers\Admin;
 
-use App\Controllers\BaseController;
 use App\Models\Menu;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\RedirectResponse;
@@ -112,14 +111,7 @@ class MenuController extends BaseController
 
     public function toggleVisible(int $id): RedirectResponse
     {
-        $menu = $this->menuModel->find($id);
-        if ($menu === null) {
-            throw PageNotFoundException::forPageNotFound();
-        }
-
-        $this->menuModel->update($id, ['is_visible' => $menu['is_visible'] ? 0 : 1]);
-
-        return redirect()->to('/admin/menus')->with('message', '노출 여부가 변경되었습니다.');
+        return $this->updateVisibility($this->menuModel, $id, '/admin/menus', '노출 여부가 변경되었습니다.');
     }
 
     /**
@@ -128,58 +120,8 @@ class MenuController extends BaseController
     public function reorder(): ResponseInterface
     {
         $parentId = $this->request->getPost('parent_id') ?: null;
-        $ids      = $this->request->getPost('ids');
 
-        if (! is_array($ids) || $ids === []) {
-            return $this->jsonResponse(422, ['message' => '잘못된 요청입니다.']);
-        }
-
-        $ids = array_map('intval', $ids);
-
-        $actualSiblingIds = array_map(
-            static fn (array $menu): int => (int) $menu['id'],
-            $this->menuModel->where('parent_id', $parentId)->findAll(),
-        );
-
-        $sortedActual    = $actualSiblingIds;
-        $sortedRequested = $ids;
-        sort($sortedActual);
-        sort($sortedRequested);
-
-        if ($sortedActual === [] || $sortedActual !== $sortedRequested) {
-            return $this->jsonResponse(422, ['message' => '형제 메뉴 구성이 일치하지 않습니다.']);
-        }
-
-        $this->menuModel->transStart();
-        foreach ($ids as $index => $id) {
-            $this->menuModel->update($id, ['sort_order' => $index + 1]);
-        }
-        $this->menuModel->transComplete();
-
-        if (! $this->menuModel->transStatus()) {
-            return $this->jsonResponse(500, ['message' => '순서 변경에 실패했습니다.']);
-        }
-
-        return $this->jsonResponse(200, ['message' => '순서가 변경되었습니다.']);
-    }
-
-    /**
-     * AJAX 응답 공통 처리. regenerate 옵션으로 CSRF 토큰이 매 요청마다 갱신되므로,
-     * 다음 요청에서 사용할 최신 토큰을 함께 내려준다.
-     */
-    private function jsonResponse(int $statusCode, array $body): ResponseInterface
-    {
-        return $this->response
-            ->setStatusCode($statusCode)
-            ->setJSON($body + ['csrfToken' => csrf_hash()]);
-    }
-
-    /**
-     * 검증 실패 시 공통으로 사용하는 리다이렉트.
-     */
-    private function validationErrorRedirect(array $errors): RedirectResponse
-    {
-        return redirect()->back()->withInput()->with('errors', $errors);
+        return $this->handleReorder($this->menuModel, ['parent_id' => $parentId], '형제 메뉴 구성이 일치하지 않습니다.');
     }
 
     /**
