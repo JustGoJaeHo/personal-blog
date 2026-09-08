@@ -14,4 +14,6 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'cs
     $routes->get('menus/(:num)/edit', 'MenuController::edit/$1');
     $routes->post('menus/(:num)', 'MenuController::update/$1');
     $routes->post('menus/(:num)/delete', 'MenuController::delete/$1');
+    $routes->post('menus/(:num)/toggle-visible', 'MenuController::toggleVisible/$1');
+    $routes->post('menus/reorder', 'MenuController::reorder');
 });

@@ -271,6 +271,35 @@ a {
     color: var(--admin-color-text-muted);
 }
 
+.admin-badge--button {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Menu tree (drag & drop) */
+.admin-menu-tree__handle {
+    width: 24px;
+    text-align: center;
+    color: var(--admin-color-text-muted);
+    cursor: grab;
+}
+
+.admin-table tr[draggable="true"].is-dragging {
+    opacity: 0.4;
+}
+
+.admin-table tr.is-drop-target {
+    outline: 2px solid var(--admin-color-primary);
+    outline-offset: -2px;
+}
+
+.admin-hint {
+    color: var(--admin-color-text-muted);
+    font-size: 13px;
+    margin-top: 12px;
+}
+
 /* Form */
 .admin-form {
     max-width: 480px;
